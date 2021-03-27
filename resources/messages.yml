@@ -1,0 +1,55 @@
+---
+# Messages
+
+notInGame: "§c> You are not in a TNTRun game."
+leftSuccess: "§a> You left from game."
+tntRunJoinUsage: "§c> Usage: /tntrunjoin <mapName>"
+mapNotFound: "§c> Map not found."
+Started: "Started"
+Restarting: "Restarting..."
+arenaInSetup: "§c> Arena is in setup!"
+arenaIsFull: "§c> Arena is full!"
+alreadyInGame: "§c> You are already in game!"
+# Info: {isFullColor} gives §c if it's full / §a if it isn't full
+joinMessage: "§a> {player} joined! §7[{isFullColor}{countPlayers}/{slots}§7]"
+# Info: {isFullColor} gives §c if it's full / §a if it isn't full
+leftMessage: "§a> {player} left! §7[{isFullColor}{countPlayers}/{slots}§7]"
+deathMessage: "§a> {player} died! §7[{countPlayers}/{slots}§7]"
+gameStarted: "§a> Game started!"
+gameAlreadyStarted: "§c> Game already started!"
+boostBroken: "§c> Your boost item broke!"
+boostLeft: "§e> You have {boostLeft} boosts left."
+arenaRestarting: "§c> Game restarting!"
+
+# Item
+
+boostItemName: "§r§aBoost"
+boostItemLore: "§r§eYou can use me to boost yourself."
+
+# Tips
+
+morePlayers: "§c> You need more players!"
+gameTip: "§a> {playerCount} player alive, game ends in: {endsAt}"
+restartTip: "§a> Map restarting in: {restartsAt}"
+gameStartsTip: "§a> Game starts in: {startsAt}"
+
+# Menu
+
+closedMenu: "§c> You closed menu."
+title: "§cTNTRun Menu"
+content: "§eSelect arena."
+exit: "§cExit"
+# Info: {isFullColor} gives §c if it's full / §a if it isn't full
+arenaFormat: "§a{arena}\n{isFullColor}{countPlayers}/{slots}"
+# Titles
+
+youWonTitle: "§aYou won!"
+
+# Sign texts
+
+Setup: "Setup"
+Wait: "Wait..."
+Full: "Full"
+Join: "Join"
+Map: "Map: §7{map}"
+...

@@ -1,0 +1,15 @@
+---
+name: TNTRun
+api: 3.0.0
+version: 1.0.0
+main: OguzhanUmutlu\TNTRun\TNTRun
+author: OguzhanUmutlu
+description: TNTRun plugin for PocketMine-MP
+commands:
+  tntrunleave:
+    description: "§r§eLets you leave from TNTRun game."
+  tntrunjoin:
+    description: "§r§eLets you join a TNTRun game."
+  tntrunmenu:
+    description: "§r§eTNT Run arena selector menu."
+...
