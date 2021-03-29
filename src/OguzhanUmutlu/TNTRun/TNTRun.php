@@ -227,7 +227,7 @@ class TNTRun extends PluginBase implements Listener {
                 }
                 $drm = false;
                 foreach($this->arenalar->getNested("arenas") as $x) {
-                    if($x["level"] == $arena->data["level"]) {
+                    if($x["name"] == $arena->data["name"]) {
                         $drm = true;
                     }
                 }
