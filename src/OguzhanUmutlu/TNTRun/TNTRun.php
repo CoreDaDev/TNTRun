@@ -2,280 +2,175 @@
 
 declare(strict_types=1);
 
-namespace OguzhanUmutlu\TNTRun;
+namespace OguzhanUmutlu\TNTRun\commands;
 
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
-use pocketmine\event\block\BlockBreakEvent;
-use pocketmine\event\block\BlockPlaceEvent;
-use pocketmine\event\player\PlayerInteractEvent;
-use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\event\player\PlayerItemHeldEvent;
-use pocketmine\event\entity\EntityLevelChangeEvent;
-use pocketmine\event\entity\EntityDamageEvent;
-use pocketmine\event\Listener;
-use pocketmine\event\player\PlayerChatEvent;
-use pocketmine\level\Level;
-use pocketmine\item\Item;
+use pocketmine\command\PluginIdentifiableCommand;
+use pocketmine\Player;
+use pocketmine\plugin\Plugin;
 use pocketmine\plugin\PluginBase;
 use OguzhanUmutlu\TNTRun\arena\Arena;
-use OguzhanUmutlu\TNTRun\arena\MapReset;
-use OguzhanUmutlu\TNTRun\commands\TNTRunCommand;
-use OguzhanUmutlu\TNTRun\math\Vector3;
-use OguzhanUmutlu\TNTRun\provider\YamlDataProvider;
-use pocketmine\item\enchantment\Enchantment;
-use pocketmine\item\enchantment\EnchantmentInstance;
-use pocketmine\utils\Config;
-use pocketmine\level\Position;
-use pocketmine\{Server,Player};
-use jojoe77777\FormAPI\SimpleForm;
-use jojoe77777\FormAPI\FormAPI;
+use OguzhanUmutlu\TNTRun\TNTRun;
 
-class TNTRun extends PluginBase implements Listener {
-    public $dataProvider;
-    public $commands = [];
-    public $arenas = [];
-    public $setters = [];
-    public $setupData = [];
-    public $config;
-    public $arenalar;
-    public $messages;
-
-    public function onEnable() {
-        $this->saveDefaultConfig();
-        $this->saveResource("messages.yml");
-        $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML, array());
-        $this->messages = new Config($this->getDataFolder()."messages.yml", Config::YAML, array());
-        $this->arenalar = new Config($this->getDataFolder()."arenas.yml", Config::YAML, ["arenas" => []]);
-        $this->getServer()->getPluginManager()->registerEvents($this, $this);
-        $this->dataProvider = new YamlDataProvider($this);
-        $this->getServer()->getCommandMap()->register("TNTRun", $this->commands[] = new TNTRunCommand($this));
-        if(!class_exists(FormAPI::class)) {
-            $this->getLogger()->warning("FormAPI is not installed, plugin disabling.");
-            $this->getServer()->getPluginManager()->disablePlugin($this);
-        }
+class TNTRunCommand extends Command implements PluginIdentifiableCommand {
+    public function __construct(TNTRun $plugin) {
+        $this->plugin = $plugin;
+        parent::__construct("tntrun", "TNTRun commands", \null, ["tr"]);
+        $this->setPermission("tntrun.cmd");
     }
-    public function onDisable() {
-        $this->dataProvider->saveArenas();
-    }
-    public function onCommand(CommandSender $player, Command $command, string $label, array $args): bool {
-        if($command->getName() == "tntrunleave") {
-              $bulun = null;
-              foreach($this->arenas as $x) {
-                  foreach($x->players as $xx) {
-                      if($xx->getName() == $player->getName()) {
-                          $bulun = $x;
-                      }
-                  }
-              }
-              if(!$bulun) {
-                  $player->sendMessage($this->messages->getNested("notInGame"));
-                  return true;
-              }
-              $bulun->disconnectPlayer($player,"",false);
-              $player->sendMessage($this->messages->getNested("leftSuccess"));
-              $player->setHealth(20);
-              $player->setFood(20);
-              $player->removeAllEffects();
-              $player->teleport($this->getServer()->getDefaultLevel()->getSpawnLocation());
-        } else if($command->getName() == "tntrunjoin") {
-              if(count($args) != 1) {
-                  $player->sendMessage($this->messages->getNested("tntRunJoinUsage"));
-                  return true;
-              }
-              $secili = null;
-              foreach($this->arenas as $arena) {
-                  if($arena->name == $args[0]) {
-                      $secili = $arena;
-                  }
-              }
-              if(!$secili) {
-                  $player->sendMessage($this->messages->getNested("mapNotFound"));
-                  return true;
-              }
-              $secili->joinToArena($player);
-        } else if($command->getName() == "tntrunmenu") {
-          $form = new SimpleForm(function (Player $player, int $data = null) {
-            $result = $data;
-            if($result == null) {
-              return true;
-            }
-            if($result == 0) {
-              $player->sendMessage($this->messages->getNested("closedMenu"));
-              return true;
-            }
-            if($result > 0 && isset($this->arenas[$result-1])) {
-              $secili = $this->arenas[$result-1];
-              $secili->joinToArena($player);
-            } else {
-                $player->sendMessage($this->messages->getNested("mapNotFound"));
-            }
-            return true;
-          });
-          $form->setTitle($this->messages->getNested("title"));
-          $form->setContent($this->messages->getNested("content"));
-          $form->addButton($this->messages->getNested("exit"));
-          foreach($this->arenas as $arena) {
-            $form->addButton(str_replace(["{arena}", "{isFullColor}", "{countPlayers}", "{slots}"], [$arena->data["name"], (count($arena->players) >= $arena->data["slots"] ? "§c" : "§a"), count($arena->players), $arena->data["slots"]], $this->messages->getNested("arenaFormat")));
-          }
-          $form->sendToPlayer($player);
+    public function execute(CommandSender $sender, string $commandLabel, array $args) {
+        if(!isset($args[0])) {
+            $sender->sendMessage("§c> Usage: §7/tr help");
+            return;
         }
-        return true;
-    }
-    public function onChat(PlayerChatEvent $event) {
-        $player = $event->getPlayer();
-        $message = $event->getMessage();
-        $arena = null;
-        if(isset($this->setters[$player->getName()])) {
-            $arena = $this->setters[$player->getName()];
-        }
-        $args = explode(" ", $event->getMessage());
-        if(!$arena) {
-          return;
-        }
-        $event->setCancelled(true);
         switch ($args[0]) {
             case "help":
-                $player->sendMessage("§a> TNTRun Setup Help Menu:\n".
-                "§7help : You are here\n" .
-                "§7slots : Sets max players of arena\n".
-                "§7world : Sets arena's world\n".
-                "§7spawnpoint : Sets spawn of arena\n".
-                "§7joinsign : Sets join sign of arena\n".
-                "§7save : Saves arena\n".
-                "§7enable : Enables arena");
+                $sender->sendMessage("§a> TNTRun commands:\n" .
+                    "§7/tr help : You are here now\n".
+                    "§7/tr create : Creates arena\n".
+                    "§7/tr delete : Deletes arena\n".
+                    "§7/tr setup : Setups arena\n".
+                    "§7/tr arenas : Lists arenas\n".
+                    "§7/tr forcestart : Starts arena");
+
                 break;
-            case "slots":
+            case "create":
+                if(!$sender->hasPermission("tr.cmd.create")) {
+                    $sender->sendMessage("§c> You don't have permission!");
+                    break;
+                }
                 if(!isset($args[1])) {
-                    $player->sendMessage("§c> Usage: §7slots <int: slots>");
+                    $sender->sendMessage("§cUsage: §7/tr create <arenaName>");
                     break;
                 }
-                if(!is_numeric($args[1])) {
-                    $player->sendMessage("§c> You need to enter an integer!");
+                if(isset($this->plugin->arenas[$args[1]])) {
+                    $sender->sendMessage("§c> $args[1] named arena already created!");
                     break;
                 }
-                $arena->data["slots"] = (int)$args[1];
-                $player->sendMessage("§a> Slots set to $args[1]!");
+                $this->plugin->arenas[$args[1]] = new Arena($this->plugin, ["name" => $args[1],"level" => null,"slots" => null, "joinsign" => null,"spawn" => ""]);
+                $sender->sendMessage("§a> $args[1] named arena created!");
                 break;
-            case "world":
+            case "delete":
+                if(!$sender->hasPermission("tr.cmd")) {
+                    $sender->sendMessage("§c> You don't have permission!");
+                    break;
+                }
                 if(!isset($args[1])) {
-                    $player->sendMessage("§cUsage: §7world <worldName>");
+                    $sender->sendMessage("§cUsage: §7/tr delete <arenaName>");
                     break;
                 }
-                if(!$this->getServer()->isLevelGenerated($args[1])) {
-                    $player->sendMessage("§c> $args[1] named world not found!");
+                $index = "nope";
+                foreach($this->plugin->arenas as $ar) {
+                    if($ar->name == $args[1]) {
+                        $index = array_search($ar, $this->plugin->arenas);
+                    }
+                }
+                if(!isset($this->plugin->arenas[$index])) {
+                    $sender->sendMessage("§c> $args[1] named arena not found!");
                     break;
                 }
-                $player->sendMessage("§a> Arena's world set to $args[1]!");
-                $arena->data["level"] = $args[1];
-                break;
-            case "spawnpoint":
-                $arena->data["spawn"] = (new Vector3($player->getX(), $player->getY(), $player->getZ()))->__toString();
-                $player->sendMessage("§a> Spawn point set to:\n§a> X: " . (string)round($player->getX()) . " Y: " . (string)round($player->getY()) . " Z: " . (string)round($player->getZ()));
-                break;
-            case "joinsign":
-                $player->sendMessage("§a> Break the join sign!");
-                $this->setupData[$player->getName()] = 0;
-                break;
-            case "save":
-                if(!$arena->level instanceof Level) {
-                    $levelName = $arena->data["level"];
-                    if(!is_string($levelName) || !$this->getServer()->isLevelGenerated($levelName)) {
-                        errorMessage:
-                        $player->sendMessage("§c> Save failed: world not found.");
-                        if($arena->setup) {
-                            $player->sendMessage("§6> Arena already enabled.");
-                        }
-                        return;
-                    }
-                    if(!$this->getServer()->isLevelLoaded($levelName)) {
-                        $this->getServer()->loadLevel($levelName);
-                    }
+                $arena = $this->plugin->arenas[$index];
 
-                    try {
-                        if(!$arena->mapReset instanceof MapReset) {
-                            goto errorMessage;
-                        }
-                        $arena->mapReset->saveMap($this->getServer()->getLevelByName($levelName));
-                        $player->sendMessage("§a> World saved!");
-                    }
-                    catch (\Exception $exception) {
-                        goto errorMessage;
-                    }
-                    break;
-                } else {
-                    $player->sendMessage("§c> World already saved.");
-                }
-                break;
-            case "enable":
-                if(!$arena->setup) {
-                    $player->sendMessage("§6> Arena already enabled!");
-                    break;
+                foreach ($arena->players as $player) {
+                    $player->teleport($this->plugin->getServer()->getDefaultLevel()->getSpawnLocation());
                 }
 
-                if(!$arena->enable(false)) {
-                    $player->sendMessage("§c> Enabling arena failed, something is wrong!");
+                if(is_file($file = $this->plugin->getDataFolder() . "arenas" . DIRECTORY_SEPARATOR . $args[1] . ".yml")) unlink($file);
+                unset($this->plugin->arenas[$index]);
+                $es = $this->plugin->arenalar->getNested("arenas");
+                unset($es[$index]);
+                $this->plugin->arenalar->setNested("arenas", $es);
+                $this->plugin->arenalar->save();
+                $this->plugin->arenalar->reload();
+                $sender->sendMessage("§a> Arena deleted!");
+                break;
+            case "setup":
+                if(!$sender->hasPermission("tr.cmd.set")) {
+                    $sender->sendMessage("§c> You don't have permission!");
                     break;
                 }
-
-                if($this->getServer()->isLevelGenerated($arena->data["level"])) {
-                    if(!$this->getServer()->isLevelLoaded($arena->data["level"]))
-                        $this->getServer()->loadLevel($arena->data["level"]);
-                    if(!$arena->mapReset instanceof MapReset)
-                        $arena->mapReset = new MapReset($arena);
-                    $arena->mapReset->saveMap($this->getServer()->getLevelByName($arena->data["level"]));
+                if(!$sender instanceof Player) {
+                    $sender->sendMessage("§c> Use this command in game!");
+                    break;
                 }
-                $drm = false;
-                foreach($this->arenalar->getNested("arenas") as $x) {
-                    if($x["name"] == $arena->data["name"]) {
-                        $drm = true;
+                if(!isset($args[1])) {
+                    $sender->sendMessage("§cUsage: §7/tr setup <arenaName>");
+                    break;
+                }
+                if(isset($this->plugin->setters[$sender->getName()])) {
+                    $sender->sendMessage("§c> You are already in setup mode");
+                    break;
+                }
+                $index = "nope";
+                foreach($this->plugin->arenas as $ar) {
+                    if($ar->name == $args[1]) {
+                        $index = array_search($ar, $this->plugin->arenas);
                     }
                 }
-                if($drm == true) {
-                    $eski = [];
-                    foreach($this->arenalar->getNested("arenas") as $x) {
-                        if($x["name"] != $arena->name) {
-                            array_push($eski, $x);
-                        }
-                    }
-                    array_push($eski, $arena->data);
-                    $this->arenalar->setNested("arenas", $eski);
-                } else {
-                    $eski = $this->arenalar->getNested("arenas");
-                    array_push($eski, $arena->data);
-                    $this->arenalar->setNested("arenas", $eski);
+                if(!isset($this->plugin->arenas[$index])) {
+                    $sender->sendMessage("§c> $args[1] named arena not found!");
+                    break;
                 }
-                $this->arenalar->save();
-                $this->arenalar->reload();
-                $arena->loadArena(false);
-                $player->sendMessage("§a> Arena enabled!");
-                break;
-            case "done":
-                unset($this->setters[$player->getName()]);
-                if(isset($this->setupData[$player->getName()])) {
-                    unset($this->setupData[$player->getName()]);
-                }
-                $player->sendMessage("§a> You left from setup mode!");
-                break;
-            default:
-                $player->sendMessage("§6> You are in setup mode.\n".
+                $this->plugin->arenas[$index]->setup = true;
+                $sender->sendMessage("§6> You are in setup mode.\n".
                     "§7- Use §lhelp §r§7to see commands\n"  .
                     "§7- or use §ldone §r§7to leave from setup mode");
+                $this->plugin->setters[$sender->getName()] = $this->plugin->arenas[$index];
+                break;
+            case "arenas":
+                if(!$sender->hasPermission("tr.cmd.arenas")) {
+                    $sender->sendMessage("§cYou don't have permission!");
+                    break;
+                }
+                if(count($this->plugin->arenas) === 0) {
+                    $sender->sendMessage("§6> There is no arena.");
+                    break;
+                }
+                $list = "§7> Arenas:\n";
+                foreach ($this->plugin->arenas as $arena) {
+                    if($arena->setup) {
+                        $list .= "§7- ".$arena->name." : §cclosed\n";
+                    }
+                    else {
+                        $list .= "§7- ".$arena->name." : §aenabled\n";
+                    }
+                }
+                $sender->sendMessage($list);
+                break;
+            case "forcestart":
+                if(!$sender->hasPermission("tr.cmd.arenas")) {
+                    $sender->sendMessage("§c> You don't have permission!");
+                    break;
+                }
+                if(count($args) != 2) {
+                    $sender->sendMessage("§c> Usage: /tr forcestart <arenaName>");
+                    break;
+                }
+                $secili = null;
+                foreach($this->plugin->arenas as $arena) {
+                    if($arena->name == $args[1]) {
+                        $secili = $arena;
+                    }
+                }
+                if(!$secili) {
+                    $sender->sendMessage("§c> Arena not found.");
+                    break;
+                }
+                $secili->startGame();
+                break;
+            default:
+                if(!$sender->hasPermission("tr.cmd.help")) {
+                    $sender->sendMessage("§c> You don't have permission!!");
+                    break;
+                }
+                $sender->sendMessage("§c> Usage: §7/tr help");
                 break;
         }
+
     }
-    public function onBreak(BlockBreakEvent $event) {
-        $player = $event->getPlayer();
-        $block = $event->getBlock();
-        if(isset($this->setupData[$player->getName()])) {
-            switch ($this->setupData[$player->getName()]) {
-                case 0:
-                    $this->setters[$player->getName()]->data["joinsign"] = [(new Vector3($block->getX(), $block->getY(), $block->getZ()))->__toString(), $block->getLevel()->getFolderName()];
-                    $player->sendMessage("§a> Join sign set!");
-                    unset($this->setupData[$player->getName()]);
-                    $event->setCancelled(\true);
-                    break;
-            }
-        }
+    public function getPlugin(): Plugin {
+        return $this->plugin;
     }
+
 }
