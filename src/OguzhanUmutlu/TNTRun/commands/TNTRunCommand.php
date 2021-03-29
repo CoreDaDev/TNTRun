@@ -60,18 +60,29 @@ class TNTRunCommand extends Command implements PluginIdentifiableCommand {
                     $sender->sendMessage("§cUsage: §7/tr delete <arenaName>");
                     break;
                 }
-                if(!isset($this->plugin->arenas[$args[1]])) {
+                $index = "nope";
+                foreach($this->plugin->arenas as $ar) {
+                    if($ar->name == $args[1]) {
+                        $index = array_search($ar, $this->plugin->arenas);
+                    }
+                }
+                if(!isset($this->plugin->arenas[$index])) {
                     $sender->sendMessage("§c> $args[1] named arena not found!");
                     break;
                 }
-                $arena = $this->plugin->arenas[$args[1]];
+                $arena = $this->plugin->arenas[$index];
 
                 foreach ($arena->players as $player) {
                     $player->teleport($this->plugin->getServer()->getDefaultLevel()->getSpawnLocation());
                 }
 
                 if(is_file($file = $this->plugin->getDataFolder() . "arenas" . DIRECTORY_SEPARATOR . $args[1] . ".yml")) unlink($file);
-                unset($this->plugin->arenas[$args[1]]);
+                unset($this->plugin->arenas[$index]);
+                $es = $this->plugin->arenalar->getNested("arenas");
+                unset($es[$index]);
+                $this->plugin->arenalar->setNested("arenas", $es);
+                $this->plugin->arenalar->save();
+                $this->plugin->arenalar->reload();
                 $sender->sendMessage("§a> Arena deleted!");
                 break;
             case "setup":
