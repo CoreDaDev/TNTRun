@@ -112,7 +112,7 @@ class TNTRunCommand extends Command implements PluginIdentifiableCommand {
                     $sender->sendMessage("§c> $args[1] named arena not found!");
                     break;
                 }
-                $this->plugin->arenas[$index]->setup = false;
+                $this->plugin->arenas[$index]->setup = true;
                 $sender->sendMessage("§6> You are in setup mode.\n".
                     "§7- Use §lhelp §r§7to see commands\n"  .
                     "§7- or use §ldone §r§7to leave from setup mode");
