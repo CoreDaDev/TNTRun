@@ -77,7 +77,7 @@ class TNTRun extends PluginBase implements Listener {
               $player->setHealth(20);
               $player->setFood(20);
               $player->removeAllEffects();
-              $player->teleport($this->plugin->getServer()->getDefaultLevel()->getSpawnLocation());
+              $player->teleport($this->getServer()->getDefaultLevel()->getSpawnLocation());
         } else if($command->getName() == "tntrunjoin") {
               if(count($args) != 1) {
                   $player->sendMessage($this->messages->getNested("tntRunJoinUsage"));
@@ -234,7 +234,7 @@ class TNTRun extends PluginBase implements Listener {
                 if($drm == true) {
                     $eski = [];
                     foreach($this->arenalar->getNested("arenas") as $x) {
-                        if($x["level"] != $arena->data["level"]) {
+                        if($x["name"] != $arena->name) {
                             array_push($eski, $x);
                         }
                     }
