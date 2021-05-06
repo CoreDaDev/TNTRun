@@ -103,9 +103,9 @@ class TNTRunCommand extends Command implements PluginIdentifiableCommand {
                     break;
                 }
                 $index = "nope";
-                foreach($this->plugin->arenas as $ar) {
+                foreach($this->plugin->arenas as $inde => $ar) {
                     if($ar->name == $args[1]) {
-                        $index = array_search($ar, $this->plugin->arenas);
+                        $index = $inde;
                     }
                 }
                 if(!isset($this->plugin->arenas[$index])) {
