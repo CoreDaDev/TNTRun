@@ -235,8 +235,8 @@ class Arena implements Listener {
       $event->getPlayer()->getPosition()->getLevel()->stopTime();
       $player = $event->getPlayer();
       if($this->inGame($player) && $this->phase == self::PHASE_GAME) {
-          $this->blokSil($player->asVector3());
-          $this->blokSil($player->asVector3()->add(0, -1));
+          $this->blokSil(new Vector3($player->getX(),$player->getY(),$player->getZ()));
+          $this->blokSil(new Vector3($player->getX(),$player->getY()-1,$player->getZ()));
 
           # Thanks for ethaniccc for helping this code
           $AABB = $player->getBoundingBox()->expandedCopy(0, 1, 0);
@@ -245,7 +245,7 @@ class Arena implements Listener {
           # Thanks for ethaniccc for helping this code
 
           foreach($blocks as $block){
-              $this->blokSil($block->asVector3());
+              $this->blokSil(new Vector3($block->getX(),$block->getY(),$block->getZ()));
           }
           if($player->getPosition()->getY() < 1) {
               $player->setHealth(20);
