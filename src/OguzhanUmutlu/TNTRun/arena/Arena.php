@@ -272,7 +272,7 @@ class Arena implements Listener {
 
 
 
-    public function blokSil(Vector3 $konum) {
+    public function blokSil($konum) {
         $this->plugin->getScheduler()->scheduleDelayedTask(new \pocketmine\scheduler\ClosureTask(
             function(int $currentTick) use ($konum): void{
                 $this->level->setBlock($konum, new Block(0));
