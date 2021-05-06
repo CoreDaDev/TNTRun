@@ -26,7 +26,7 @@ use pocketmine\Player;
 use pocketmine\tile\Chest;
 use pocketmine\tile\Tile;
 use OguzhanUmutlu\TNTRun\event\PlayerArenaWinEvent;
-use OguzhanUmutlu\TNTRun\math\Vector3;
+use pocketmine\math\Vector3;
 use OguzhanUmutlu\TNTRun\TNTRun;
 use pocketmine\event\entity\EntityDamageEvent;
 
