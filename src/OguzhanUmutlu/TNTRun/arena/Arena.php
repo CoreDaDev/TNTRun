@@ -150,6 +150,7 @@ class Arena implements Listener {
 
     public function startGame() {
         $players = [];
+        $this->phase = 1;
         foreach ($this->players as $player) {
             $players[$player->getName()] = $player;
             $player->setGamemode(2);
@@ -158,12 +159,10 @@ class Arena implements Listener {
             $it->setCustomName($this->lazyLang("boostItemName"));
             $it->setLore([$this->lazyLang("boostItemLore")]);
             $player->getInventory()->addItem($it);
-        }
-        foreach($this->players as $p) {
             $p->sendMessage($this->lazyLang("gameStarted"));
+            $player->move(0.1,0.1,0.1);
         }
         $this->players = $players;
-        $this->phase = 1;
     }
 
     public function startRestart() {
