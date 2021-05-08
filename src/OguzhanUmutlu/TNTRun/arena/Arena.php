@@ -159,7 +159,7 @@ class Arena implements Listener {
             $it->setCustomName($this->lazyLang("boostItemName"));
             $it->setLore([$this->lazyLang("boostItemLore")]);
             $player->getInventory()->addItem($it);
-            $p->sendMessage($this->lazyLang("gameStarted"));
+            $player->sendMessage($this->lazyLang("gameStarted"));
             $player->move(0.1,0.1,0.1);
         }
         $this->players = $players;
